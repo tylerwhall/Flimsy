@@ -1,15 +1,14 @@
 #!/usr/bin/python
-import serial
 import struct
 
 class Xbee:
-    def __init__(self, serial):
+    def __init__(self):
         if struct.calcsize('Q') != 8:
             raise Exception('sizeof() error')
-        self.serial = serial
         self.state = 0
         self.state_esc = False
         self.recv_cb = None
+        self.write_cb = None
         self.dig_cb = None
         self.adc_cb = None
         self.current_frame = 1
@@ -95,7 +94,8 @@ class Xbee:
         frame += chr(int(len(data) % 256)) #LSB of len
         frame += data
         frame += chr(self.checksum(data))
-        self.serial.write(frame)
+        if self.write_cb:
+            self.write_cb(frame)
 
     def handle_recv(self, data):
         addr = self.buf_to_val(data[:8])
@@ -223,14 +223,19 @@ def remote_at_cb(led, name, status, data):
     x.at_command_remote(addr, 0xfffe, "D0" + chr(0x4 + led), cb=remote_at_cb, arg=led)
 
 if __name__ == "__main__":
+    def write(data):
+        ser.write(data)
+    import serial
     ser = serial.Serial('/dev/ttyACM0', 9600)
     addr = 0x13a2004032d957
-    x = Xbee(ser)
+    x = Xbee()
     x.recv_cb = recv
+    x.write_cb = write
     x.dig_cb = remote_digital_cb
     x.adc_cb = remote_analog_cb
     led = 1
-    #x.transmit(0xffff, 0xfffe, "Hello World\r")
+    x.transmit(0xffff, 0xfffe, "Hello World\r")
     #remote_at_cb(1, None, 0, None)
     while True:
         x.recv(ser.read())
+
