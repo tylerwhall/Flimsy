@@ -8,7 +8,10 @@ class Xbee:
             raise Exception('sizeof() error')
         self.serial = serial
         self.state = 0
+        self.state_esc = False
         self.recv_cb = None
+        self.dig_cb = None
+        self.adc_cb = None
         self.current_frame = 1
         self.frame_cbs = {}
 
@@ -16,8 +19,11 @@ class Xbee:
         self.current_frame = (self.current_frame % 255) + 1
 
     def call_frame_cb(self, frame, *args):
-        if self.frame_cbs[frame][0] is not None:
-            self.frame_cbs[frame][0](self.frame_cbs[frame][1], *args)
+        try:
+            if self.frame_cbs[frame][0] is not None:
+                self.frame_cbs[frame][0](self.frame_cbs[frame][1], *args)
+        except KeyError:
+            print "Got callback for unknown frame"
 
     def buf_to_val(self, data):
         val = 0
@@ -59,6 +65,18 @@ class Xbee:
         packet.append(data)
         self.send_frame("".join(packet))
 
+    def escape_packet(self, data):
+        packet = []
+        packet.append(data[0])
+        for byte in data[1:]:
+            ibyte = ord(byte)
+            if ibyte in (0x7e,0x7d,0x11,0x13):
+                packet.append(chr(0x7d))
+                packet.append(chr(ibyte^0x20))
+            else:
+                packet.append(byte)
+        return "".join(packet)
+
     def transmit(self, addr, network, data):
         packet = [chr(0x10)] #API identifier
         packet.append(chr(0)) #Frame ID
@@ -67,7 +85,9 @@ class Xbee:
         packet.append(chr(0)) #Broadcast radius (always 0)
         packet.append(chr(0)) #Unicast
         packet.append(data) #Payload
-        self.send_frame("".join(packet))
+        packet = "".join(packet)
+        packet = self.escape_packet(packet)
+        self.send_frame(packet)
 
     def send_frame(self, data):
         frame = chr(0x7e) # Start delimiter
@@ -113,6 +133,26 @@ class Xbee:
         print "delivery_status=", delivery_status
         print "discovery_status=", discovery_status
 
+    def handle_remote_io(self, data):
+        addr = self.buf_to_val(data[0:8])
+        network = self.buf_to_val(data[8:10])
+        dig_enb = self.buf_to_val(data[12:14])
+        adc_enb = self.buf_to_val(data[14])
+        dig_dat = self.buf_to_val(data[15:17])
+        data = data[17:]
+        for i in range(8):
+            if dig_enb & 0x1:
+                if self.dig_cb:
+                    self.dig_cb(addr, network, i, (dig_dat & 0x1) == 1)
+            dig_dat >>= 1
+            dig_enb >>=1
+        for i in range(5):
+            if adc_enb & 0x1:
+                val = self.buf_to_val(data[0:2])
+                data = data[2:]
+                if self.adc_cb:
+                    self.adc_cb(addr, network, i, val)
+            adc_enb >>=1
 
     def handle_incoming_packet(self, data):
         id = ord(data[0])
@@ -125,15 +165,23 @@ class Xbee:
             self.handle_remote_at(data)
         elif id == 0x8b:
             self.handle_transmit_status(data)
+        elif id == 0x92:
+            self.handle_remote_io(data)
         else:
             print "Unhandled packet type.  id = 0x%x" % id
 
     def recv(self, data):
         for byte in data:
-            if self.state == 0: #Look for start delimiter
-                if ord(byte) == 0x7e:
-                    self.state += 1
-            elif self.state == 1: #MSB of len
+            if ord(byte) == 0x7e: #Look for start delimiter
+                self.state = 1
+                continue
+            elif ord(byte) == 0x7d:
+                self.state_esc = True
+                continue
+            elif self.state_esc == True:
+                self.state_esc = False
+                byte = chr(ord(byte)^0x20)
+            if self.state == 1: #MSB of len
                 self.recv_len = ord(byte) * 256
                 self.state += 1
             elif self.state == 2: #LSB of len
@@ -159,6 +207,13 @@ def recv(*args):
     print "Got rx packet"
     print args
 
+def remote_digital_cb(addr, network, pin, value):
+    print "Addr", addr, "Pin", pin, "=", value
+    x.at_command_remote(0x13a2004032d957, 0xfffe, "D1" + chr(0x5))
+    x.at_command_remote(0x13a2004032d957, 0xfffe, "D1" + chr(0x4))
+
+def remote_analog_cb(addr, network, pin, value):
+    print "Addr", addr, "ADC", pin, "=", value
 
 def remote_at_cb(led, name, status, data):
     print "Got remote AT response"
@@ -172,8 +227,10 @@ if __name__ == "__main__":
     addr = 0x13a2004032d957
     x = Xbee(ser)
     x.recv_cb = recv
+    x.dig_cb = remote_digital_cb
+    x.adc_cb = remote_analog_cb
     led = 1
-    #x.transmit(0xffff, 0xfffe, "Hello World\r\n")
-    remote_at_cb(1, None, 0, None)
+    #x.transmit(0xffff, 0xfffe, "Hello World\r")
+    #remote_at_cb(1, None, 0, None)
     while True:
         x.recv(ser.read())
