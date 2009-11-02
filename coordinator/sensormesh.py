@@ -4,6 +4,8 @@ from threading import Timer
 from xbee import Xbee
 
 class SensorMesh(object):
+    """Base class for a sensor mesh.  This simply lets clients set a callback
+    function"""
     def __init__(self):
         self.sensor_cb = None
     def notify(self, num, value):
@@ -11,6 +13,9 @@ class SensorMesh(object):
             self.sensor_cb(num, value)
 
 class XbeeSensorMesh(SensorMesh):
+    """Creates a new Xbee instance and registers with the digital callback.
+    When a digital reading comes in, it uses the "sensors" dictionary to map
+    Xbee addresses to web server sensor ids"""
     def __init__(self, sensors):
         super(XbeeSensorMesh, self).__init__()
         self.xbee = Xbee()
@@ -27,14 +32,18 @@ class XbeeSensorMesh(SensorMesh):
             print "Got reading from unknown sensor 0x%x" % addr
 
     def recv(self, data):
+        """Eats input data from the Xbee module and generates events"""
         self.xbee.recv(data)
 
 class FakeSensorMesh(SensorMesh):
+    """Externally equivalent to the XbeeSensorMesh.  Currently reports false for
+    each sensor in the provided list of sensor ids"""
     def __init__(self, ids):
         super(FakeSensorMesh, self).__init__()
         self.ids = ids
 
     def start(self):
+        """Starts the event generator thread"""
         t = Timer(3, self.timer_pop)
         t.start()
 
