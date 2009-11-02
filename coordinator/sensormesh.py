@@ -11,11 +11,11 @@ class SensorMesh(object):
             self.sensor_cb(num, value)
 
 class XbeeSensorMesh(SensorMesh):
-    def __init__(self):
+    def __init__(self, sensors):
         super(XbeeSensorMesh, self).__init__()
         self.xbee = Xbee()
         self.xbee.dig_cb = self.dig_cb
-        self.sensors = {0x13a2004032d957 : 0}
+        self.sensors = sensors
 
     def dig_cb(self, addr, network, pin, value):
         try:

@@ -25,12 +25,14 @@ class Xbee:
             print "Got callback for unknown frame"
 
     def buf_to_val(self, data):
+        """Convert a string of bytes to a value (big endian)"""
         val = 0
         for i in range(len(data)):
             val += ord(data[i]) * 2**((len(data)-1-i)*8)
         return val
 
     def checksum(self, data):
+        """Calculate the xbee checksum of a string of bytes"""
         checksum = 0
         for byte in data:
             checksum += ord(byte)
@@ -38,6 +40,7 @@ class Xbee:
         return 0xff - checksum
 
     def at_command_remote(self, addr, network, data, queued=False, cb=None, arg=None):
+        """Send a command to a remote Xbee"""
         packet = [chr(0x17)]
         packet.append(chr(self.current_frame)) #Frame ID
         self.frame_cbs[self.current_frame] = (cb, arg) #Store callback for response
@@ -51,9 +54,8 @@ class Xbee:
         packet.append(data)
         self.send_frame("".join(packet))
 
-    #Data: String of AT data
-    #Queued: Boolean
     def at_command(self, data=None, queued=False, cb=None, arg=None):
+        """ Send a local at command """
         if queued: #API identifier
             packet = [chr(0x09)]
         else:
@@ -171,6 +173,7 @@ class Xbee:
             print "Unhandled packet type.  id = 0x%x" % id
 
     def recv(self, data):
+        """ Parse incoming serial data and generate events """
         for byte in data:
             if ord(byte) == 0x7e: #Look for start delimiter
                 self.state = 1
@@ -203,28 +206,28 @@ class Xbee:
                 else:
                     print "Checksum failed. Wanted 0x%x Got 0x%x" % (chk, ord(byte))
 
-def recv(*args):
-    print "Got rx packet"
-    print args
-
-def remote_digital_cb(addr, network, pin, value):
-    print "Addr", addr, "Pin", pin, "=", value
-    x.at_command_remote(0x13a2004032d957, 0xfffe, "D1" + chr(0x5))
-    x.at_command_remote(0x13a2004032d957, 0xfffe, "D1" + chr(0x4))
-
-def remote_analog_cb(addr, network, pin, value):
-    print "Addr", addr, "ADC", pin, "=", value
-
-def remote_at_cb(led, name, status, data):
-    print "Got remote AT response"
-    print "Status = 0x%x" % status
-    led += 1
-    led %= 2
-    x.at_command_remote(addr, 0xfffe, "D0" + chr(0x4 + led), cb=remote_at_cb, arg=led)
-
 if __name__ == "__main__":
     def write(data):
         ser.write(data)
+        def recv(*args):
+            print "Got rx packet"
+        print args
+
+    def remote_digital_cb(addr, network, pin, value):
+        print "Addr", addr, "Pin", pin, "=", value
+        x.at_command_remote(0x13a2004032d957, 0xfffe, "D1" + chr(0x5))
+        x.at_command_remote(0x13a2004032d957, 0xfffe, "D1" + chr(0x4))
+
+    def remote_analog_cb(addr, network, pin, value):
+        print "Addr", addr, "ADC", pin, "=", value
+
+    def remote_at_cb(led, name, status, data):
+        print "Got remote AT response"
+        print "Status = 0x%x" % status
+        led += 1
+        led %= 2
+        x.at_command_remote(addr, 0xfffe, "D0" + chr(0x4 + led), cb=remote_at_cb, arg=led)
+
     import serial
     ser = serial.Serial('/dev/ttyACM0', 9600)
     addr = 0x13a2004032d957
