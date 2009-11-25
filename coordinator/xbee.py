@@ -174,16 +174,20 @@ class Xbee:
 
     def recv(self, data):
         """ Parse incoming serial data and generate events """
+        rx_data = []
         for byte in data:
             if ord(byte) == 0x7e: #Look for start delimiter
-                self.state = 1
-                continue
+                self.state = 1 #Reset input state
             elif ord(byte) == 0x7d:
                 self.state_esc = True
-                continue
             elif self.state_esc == True:
                 self.state_esc = False
                 byte = chr(ord(byte)^0x20)
+            rx_data.append(byte)
+        self.rx("".join(rx_data))
+
+    def rx(self, data):
+        for byte in data:
             if self.state == 1: #MSB of len
                 self.recv_len = ord(byte) * 256
                 self.state += 1
