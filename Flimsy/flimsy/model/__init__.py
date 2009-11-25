@@ -60,3 +60,4 @@ def init_model(engine):
 
 # Import your model modules here.
 from flimsy.model.auth import User, Group, Permission
+from flimsy.model.sensor import Sensor

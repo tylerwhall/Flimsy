@@ -51,6 +51,14 @@ def setup_app(command, conf, vars):
     editor.password = u'editpass'
 
     model.DBSession.add(editor)
+
+    sensor = model.Sensor()
+    sensor.name = 'Sensor 1'
+    sensor.lat = 38.218964
+    sensor.lng = -85.759554
+
+    model.DBSession.add(sensor)
+
     model.DBSession.flush()
 
     transaction.commit()
