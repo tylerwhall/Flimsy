@@ -6,11 +6,21 @@
       py:strip="">
 <head>
     <title py:replace="''">Your title goes here</title>
+    <script type="text/javascript" src="${tg.url('/scripts/jquery.js')}" ></script>
     <link rel="stylesheet" type="text/css" media="screen" href="${tg.url('/css/style.css')}" />
+<script type="text/javascript">
+    $(document).ready(function(){
+        $.getJSON("${tg.url('/map/sensors')}",
+                  function(data){
+                    alert("Foo"+data.sensors[0].toString());
+                    }
+        );
+    });
+</script>
 </head>
 
-<body onload="init()">
-    Test page
+<body>
+    <p>Test page</p>
     <div id="map_canvas" style="width:100%; height:100%"></div>
 </body>
 </html>
