@@ -12,6 +12,8 @@ from flimsy.controllers.error import ErrorController
 from flimsy import model
 from flimsy.controllers.secure import SecureController
 
+from flimsy.controllers.map import MapController
+
 __all__ = ['RootController']
 
 
@@ -34,6 +36,8 @@ class RootController(BaseController):
     admin = Catwalk(model, DBSession)
     
     error = ErrorController()
+
+    map = MapController()
 
     @expose('flimsy.templates.index')
     def index(self):
