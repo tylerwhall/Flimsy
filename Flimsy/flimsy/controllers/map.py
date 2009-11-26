@@ -3,11 +3,18 @@ from tg import expose
 from flimsy.lib.base import BaseController
 
 from flimsy.model import DBSession, Sensor
+from sqlalchemy import func
 
 class MapController(BaseController):
     @expose('flimsy.templates.map')
     def index(self):
-        return dict()
+        max = DBSession.query(func.max(Sensor.lat)).one()[0]
+        min = DBSession.query(func.min(Sensor.lat)).one()[0]
+        lat = (max + min) / 2
+        max = DBSession.query(func.max(Sensor.lng)).one()[0]
+        min = DBSession.query(func.min(Sensor.lng)).one()[0]
+        lng = (max + min) / 2
+        return dict(lat=lat, lng=lng)
 
     @expose('json')
     def sensors(self):

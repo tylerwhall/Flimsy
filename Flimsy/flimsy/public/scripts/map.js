@@ -1,4 +1,4 @@
-function FlimsyMap(element) {
+function FlimsyMap(element, lat, lng) {
     /* This code makes managing markers much easier */
     var infowindow;
     (function () {
@@ -25,7 +25,7 @@ function FlimsyMap(element) {
     })();
 
     /* Create map */
-    var latlng = new google.maps.LatLng(38.215913,-85.757668);
+    var latlng = new google.maps.LatLng(lat,lng);
     var options = {
         zoom: 16,
         center: latlng,
