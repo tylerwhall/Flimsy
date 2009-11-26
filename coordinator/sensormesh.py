@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
-from threading import Timer
+import random
+
 from xbee import Xbee
 
 class SensorMesh(object):
@@ -39,18 +40,13 @@ class FakeSensorMesh(SensorMesh):
     """Externally equivalent to the XbeeSensorMesh.  Currently reports false for
     each sensor in the provided list of sensor ids"""
     def __init__(self, ids):
+        random.seed()
         super(FakeSensorMesh, self).__init__()
         self.ids = ids
 
-    def start(self):
-        """Starts the event generator thread"""
-        t = Timer(3, self.timer_pop)
-        t.start()
-
-    def timer_pop(self):
+    def update(self):
         for id in self.ids:
-            self.notify(id, False)
-        self.start()
+            self.notify(id, random.random() > .5)
     
 def main():
     import serial
@@ -61,7 +57,6 @@ def main():
     c.sensor_cb = print_sensor
     f = FakeSensorMesh([1,2,3])
     f.sensor_cb = print_sensor
-    f.start()
     while True:
         c.recv(s.read())
 

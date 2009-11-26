@@ -20,3 +20,13 @@ class MapController(BaseController):
             s["flooded"] = row.flooded
             sens.append(s)
         return dict(sensors=sens)
+
+    @expose('json')
+    def update(self, id=1, flooded=False):
+        id = int(id)
+        try:
+            s = DBSession.query(Sensor).filter_by(id=id).one()
+        except NoResultFound:
+            return str(id) + " not found"
+        s.flooded = flooded=='True'
+        return "Success", flooded, s.flooded
