@@ -10,14 +10,20 @@
     <script type="text/javascript" src="${tg.url('/scripts/map.js')}" ></script>
 
 <script type="text/javascript">
+    var map;
     $(document).ready(function(){
-        var map = new FlimsyMap("map_canvas");
+        map = new FlimsyMap("map_canvas");
+        updateSensors()
+    });
+
+    function updateSensors() {
         $.getJSON("${tg.url('/map/sensors')}",
                   function(data){
                       map.handleSensors(data.sensors);
                   }
         );
-    });
+        setTimeout('updateSensors()', 3000);
+    }
 </script>
 
 </head>
