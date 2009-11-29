@@ -1,8 +1,12 @@
 sensors:
     0x13a2004032d57: 0
 
+fake_sensors:
+    - 1
+    - 2
+
 server:
     address: 127.0.0.1:8080
     url: /map/update
 
-serial_port: /dev/ttyACM0
+#serial_port: /dev/ttyACM0
