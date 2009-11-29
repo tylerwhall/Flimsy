@@ -210,7 +210,7 @@ class Xbee:
                 else:
                     print "Checksum failed. Wanted 0x%x Got 0x%x" % (chk, ord(byte))
 
-if __name__ == "__main__":
+if __name__ == "__main__": # pragma: no cover
     def write(data):
         ser.write(data)
         def recv(*args):

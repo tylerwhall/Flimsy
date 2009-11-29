@@ -48,17 +48,16 @@ class FakeSensorMesh(SensorMesh):
         for id in self.ids:
             self.notify(id, random.random() > .5)
     
-def main():
-    import serial
-    def print_sensor(num, value):
-        print "Sensor", num, value
-    s = serial.Serial('/dev/ttyACM0', 9600)
-    c = XbeeSensorMesh()
-    c.sensor_cb = print_sensor
-    f = FakeSensorMesh([1,2,3])
-    f.sensor_cb = print_sensor
-    while True:
-        c.recv(s.read())
-
-if __name__ == "__main__":
+if __name__ == "__main__": # pragma: no cover
+    def main():
+        import serial
+        def print_sensor(num, value):
+            print "Sensor", num, value
+        s = serial.Serial('/dev/ttyACM0', 9600)
+        c = XbeeSensorMesh()
+        c.sensor_cb = print_sensor
+        f = FakeSensorMesh([1,2,3])
+        f.sensor_cb = print_sensor
+        while True:
+            c.recv(s.read())
     main()
