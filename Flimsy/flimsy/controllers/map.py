@@ -14,7 +14,7 @@ class MapController(BaseController):
         max = DBSession.query(func.max(Sensor.lng)).one()[0]
         min = DBSession.query(func.min(Sensor.lng)).one()[0]
         lng = (max + min) / 2
-        return dict(lat=lat, lng=lng)
+        return dict(page='map', lat=lat, lng=lng)
 
     @expose('json')
     def sensors(self):
