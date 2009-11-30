@@ -36,17 +36,30 @@ function FlimsyMap(element, lat, lng) {
 
     /* Takes an array of sensor dicts */
     this.handleSensors = function(sensors) {
-        this.map.clearMarkers();
         for (var i = 0; i < sensors.length; i++) {
-            var content = sensors[i].name;
-            this.map.addMarker(this.createMarker(sensors[i].name,
-                                           content,
-                                           sensors[i].flooded,
-                                           new google.maps.LatLng(sensors[i].lat, sensors[i].lng)));
+            var markers = this.map.getMarkers()
+            var makeNew = true;
+            for (var j = 0; j < markers.length; j++) {
+                if (sensors[i].id == markers[j].id) {
+                    makeNew = false;
+                    if (sensors[i].flooded != markers[j].flooded) {
+                        markers[j].set_map(null);
+                        markers.splice(j,1); //Remove from array
+                        makeNew = true;
+                    }
+                }
+            }
+            if (makeNew) {
+                var content = sensors[i].name;
+                this.map.addMarker(this.createMarker(sensors[i].id, sensors[i].name,
+                                       content,
+                                       sensors[i].flooded,
+                                       new google.maps.LatLng(sensors[i].lat, sensors[i].lng)));
+            }
         }
     }
 
-    this.createMarker = function (name, caption, flooded, latlng) {
+    this.createMarker = function (id, name, caption, flooded, latlng) {
         var image = "/images/marker.png"
         if (flooded) {
             caption += "<b><br>FLOODED</b>";
@@ -64,6 +77,8 @@ function FlimsyMap(element, lat, lng) {
                                              title: name,
                                              icon: image,
                                              map: this.map});
+        marker.id = id;
+        marker.flooded = flooded;
         google.maps.event.addListener(marker, "click", function() {
           if (infowindow) infowindow.close();
           infowindow = new google.maps.InfoWindow({content: caption});

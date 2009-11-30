@@ -25,6 +25,7 @@ class MapController(BaseController):
             s["lat"] = row.lat
             s["lng"] = row.lng
             s["flooded"] = row.flooded
+            s["id"] = row.id
             sens.append(s)
         return dict(sensors=sens)
 
