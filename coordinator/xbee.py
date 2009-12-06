@@ -178,8 +178,10 @@ class Xbee:
         for byte in data:
             if ord(byte) == 0x7e: #Look for start delimiter
                 self.state = 1 #Reset input state
+                continue
             elif ord(byte) == 0x7d:
                 self.state_esc = True
+                continue
             elif self.state_esc == True:
                 self.state_esc = False
                 byte = chr(ord(byte)^0x20)
@@ -213,14 +215,15 @@ class Xbee:
 if __name__ == "__main__": # pragma: no cover
     def write(data):
         ser.write(data)
-        def recv(*args):
-            print "Got rx packet"
+
+    def recv(*args):
+        print "Got rx packet"
         print args
 
     def remote_digital_cb(addr, network, pin, value):
-        print "Addr", addr, "Pin", pin, "=", value
-        x.at_command_remote(0x13a2004032d957, 0xfffe, "D1" + chr(0x5))
-        x.at_command_remote(0x13a2004032d957, 0xfffe, "D1" + chr(0x4))
+        print "Addr 0x%x" % addr, "Pin", pin, "=", value
+        #x.at_command_remote(0x13a2004032d957, 0xfffe, "D1" + chr(0x5))
+        #x.at_command_remote(0x13a2004032d957, 0xfffe, "D1" + chr(0x4))
 
     def remote_analog_cb(addr, network, pin, value):
         print "Addr", addr, "ADC", pin, "=", value
